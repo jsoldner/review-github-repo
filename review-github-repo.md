@@ -112,18 +112,49 @@ Save to: `Owner's Inbox/YYYY-MM-DD-review-<REPO_NAME>-FAILED.html`
 Contents:
 ```html
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>Review Failed: <REPO_NAME></title>
-<style>body{font-family:sans-serif;max-width:700px;margin:40px auto;padding:0 20px;color:#333}
-.banner{background:#fee2e2;border-left:4px solid #dc2626;padding:16px;border-radius:4px}</style>
-</head><body>
-<h1>Review Failed: <REPO_NAME></h1>
-<div class="banner">
-  <p><strong>Date:</strong> YYYY-MM-DD</p>
-  <p><strong>Repo:</strong> <original URL></p>
-  <p>The code review pipeline failed. The cloned repo at <code><CLONE_DIR></code> may still exist.</p>
-  <p><strong>Error:</strong> <describe what went wrong></p>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Review Failed: <REPO_NAME></title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a2e; background: #f4f5f7; padding: 32px 16px; }
+    .container { max-width: 960px; margin: 0 auto; }
+    .header { background: #1a1a2e; color: #fff; border-radius: 10px 10px 0 0; padding: 28px 32px 24px; }
+    .header h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .header-meta { font-size: 12px; color: #9ca3af; }
+    .banner { background: #7f1d1d; border-top: 1px solid #991b1b; padding: 18px 32px; display: flex; align-items: flex-start; gap: 14px; color: #fecaca; }
+    .banner-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+    .banner-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.75; margin-bottom: 4px; }
+    .banner-title { font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+    .banner p { font-size: 13px; line-height: 1.55; opacity: 0.9; margin-bottom: 6px; }
+    .card { background: #fff; padding: 28px 32px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; border-radius: 0 0 10px 10px; }
+    code { font-family: "SF Mono", "Fira Code", Consolas, monospace; background: #f3f4f6; padding: 1px 5px; border-radius: 3px; font-size: 12px; color: #374151; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-meta" style="margin-bottom:8px;">Code Review Report &nbsp;·&nbsp; YYYY-MM-DD</div>
+    <h1><REPO_NAME></h1>
+    <div class="header-meta"><original URL></div>
+  </div>
+  <div class="banner">
+    <div class="banner-icon">&#9888;</div>
+    <div>
+      <div class="banner-label">Review Failed</div>
+      <div class="banner-title">Pipeline Error</div>
+      <p>The code review pipeline failed. The cloned repo at <code><CLONE_DIR></code> may still exist.</p>
+      <p><strong>Error:</strong> <describe what went wrong></p>
+    </div>
+  </div>
+  <div class="card">
+    <p style="color:#6b7280;font-size:13px;">Review could not be completed. Please check the error above and retry.</p>
+  </div>
 </div>
-</body></html>
+</body>
+</html>
 ```
 
 Then delete the temp directory if it still exists.
@@ -132,87 +163,213 @@ Then delete the temp directory if it still exists.
 
 ## Report Format
 
-Produce a self-contained HTML file with all styles inline. Use this template:
+Produce a self-contained HTML file. Before writing, count your findings: tally Critical, Important, and Minor totals — you will need these numbers in three places (stats pills, section heading badges, and the verdict banner area). Use this template:
+
+**Tag rules:**
+- Single-domain finding: `<span class="tag tag-security">Security</span>` (use the matching class below)
+- Multi-domain finding: `<span class="tag tag-multi">Security / Architecture</span>` (one combined tag, slash-separated)
+- Tag classes: `tag-security`, `tag-quality`, `tag-architecture`, `tag-performance`, `tag-dependencies`, `tag-documentation`, `tag-multi`
+
+**Verdict banner:**
+- "Recommend Use: No" → `class="verdict verdict-no"`, icon `&#9888;`
+- "Recommend Use: Yes, with caveats" → `class="verdict verdict-caveats"`, icon `&#9888;`
+- "Recommend Use: Yes" → `class="verdict verdict-yes"`, icon `&#10003;`
+
+**Finding structure** — every finding uses three sub-elements:
+1. `.finding-header`: tag(s) + `.finding-title` (bold, short label)
+2. `.finding-body`: full explanation paragraph
+3. `.finding-location`: grayed file/line references wrapped in `<code>`
+
+**Omit** any severity section (heading + findings list) that has no findings. If all three sections are empty, add `<p style="color:#6b7280;font-style:italic;">No issues found.</p>` after the Executive Summary.
 
 ```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Code Review: <repo-name></title>
-<style>
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; max-width: 860px; margin: 40px auto; padding: 0 24px; color: #1a1a1a; line-height: 1.6; }
-  h1 { font-size: 1.6rem; margin-bottom: 4px; }
-  .meta { color: #666; font-size: 0.9rem; margin-bottom: 32px; }
-  .meta a { color: #666; }
-  h2 { font-size: 1.1rem; font-weight: 600; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; margin-top: 36px; }
-  .verdict { display: inline-block; padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 0.95rem; margin-bottom: 8px; }
-  .verdict-yes { background: #dcfce7; color: #166534; }
-  .verdict-caveats { background: #fef9c3; color: #854d0e; }
-  .verdict-no { background: #fee2e2; color: #991b1b; }
-  .rationale { color: #444; font-size: 0.95rem; }
-  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 12px; }
-  th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600; }
-  td { padding: 8px 12px; border: 1px solid #e5e7eb; }
-  .run { color: #16a34a; }
-  .skipped { color: #9ca3af; }
-  .finding { margin: 8px 0; padding: 10px 14px; border-radius: 6px; font-size: 0.9rem; }
-  .critical { background: #fee2e2; border-left: 3px solid #dc2626; }
-  .important { background: #fff7ed; border-left: 3px solid #ea580c; }
-  .minor { background: #eff6ff; border-left: 3px solid #3b82f6; }
-  .tag { display: inline-block; background: #e5e7eb; color: #374151; font-size: 0.75rem; font-weight: 600; padding: 1px 6px; border-radius: 4px; margin-right: 6px; }
-  .clean-list { list-style: none; padding: 0; }
-  .clean-list li::before { content: "✓ "; color: #16a34a; font-weight: 600; }
-  .summary { background: #f9fafb; padding: 16px; border-radius: 6px; font-size: 0.95rem; }
-  .empty { color: #9ca3af; font-style: italic; font-size: 0.9rem; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Code Review: REPO_NAME</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; line-height: 1.6; color: #1a1a2e; background: #f4f5f7; padding: 32px 16px; }
+    .container { max-width: 960px; margin: 0 auto; }
+    .header { background: #1a1a2e; color: #fff; border-radius: 10px 10px 0 0; padding: 28px 32px 24px; }
+    .header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 6px; }
+    .header-meta { font-size: 12px; color: #9ca3af; }
+    .header-meta a { color: #60a5fa; text-decoration: none; }
+    .header-meta a:hover { text-decoration: underline; }
+    .verdict { padding: 18px 32px; display: flex; align-items: flex-start; gap: 14px; }
+    .verdict-no      { background: #7f1d1d; border-top: 1px solid #991b1b; color: #fecaca; }
+    .verdict-caveats { background: #78350f; border-top: 1px solid #92400e; color: #fde68a; }
+    .verdict-yes     { background: #14532d; border-top: 1px solid #166534; color: #bbf7d0; }
+    .verdict-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+    .verdict-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.75; margin-bottom: 4px; }
+    .verdict-title { font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+    .verdict p { font-size: 13px; line-height: 1.55; opacity: 0.9; }
+    .card { background: #fff; padding: 28px 32px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; }
+    .card:last-child { border-radius: 0 0 10px 10px; border-bottom: 1px solid #e5e7eb; }
+    .stats { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
+    .stat-pill { display: flex; align-items: center; gap: 7px; padding: 6px 13px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .stat-critical  { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .stat-important { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+    .stat-minor     { background: #f9fafb; color: #4b5563; border: 1px solid #e5e7eb; }
+    .stat-pill .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .dot-critical  { background: #ef4444; }
+    .dot-important { background: #f59e0b; }
+    .dot-minor     { background: #9ca3af; }
+    h2 { font-size: 15px; font-weight: 700; color: #111827; margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #e5e7eb; }
+    h2:first-child { margin-top: 0; }
+    .section-title-row { display: flex; align-items: center; gap: 10px; }
+    .count-badge { font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 10px; }
+    .badge-critical  { background: #fee2e2; color: #b91c1c; }
+    .badge-important { background: #fef3c7; color: #b45309; }
+    .badge-minor     { background: #f3f4f6; color: #6b7280; }
+    p { margin-bottom: 10px; }
+    p:last-child { margin-bottom: 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 4px; }
+    thead tr { background: #f9fafb; }
+    th { text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280; border-bottom: 1px solid #e5e7eb; }
+    td { padding: 8px 12px; border-bottom: 1px solid #f3f4f6; vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    .status-run  { color: #16a34a; font-weight: 600; }
+    .status-skip { color: #9ca3af; }
+    .findings-list { display: flex; flex-direction: column; gap: 10px; }
+    .finding { border-radius: 6px; padding: 12px 14px; border-left: 4px solid transparent; font-size: 13px; line-height: 1.55; }
+    .finding-critical  { background: #fef2f2; border-color: #ef4444; }
+    .finding-important { background: #fffbeb; border-color: #f59e0b; }
+    .finding-minor     { background: #f9fafb; border-color: #d1d5db; }
+    .finding-header { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 5px; }
+    .tag { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; padding: 2px 7px; border-radius: 3px; flex-shrink: 0; margin-top: 1px; }
+    .tag-security      { background: #fee2e2; color: #991b1b; }
+    .tag-quality       { background: #ede9fe; color: #5b21b6; }
+    .tag-architecture  { background: #e0f2fe; color: #0369a1; }
+    .tag-performance   { background: #fef3c7; color: #92400e; }
+    .tag-dependencies  { background: #dcfce7; color: #166534; }
+    .tag-documentation { background: #f3e8ff; color: #6b21a8; }
+    .tag-multi         { background: #f1f5f9; color: #475569; }
+    .finding-title { font-weight: 700; color: #111827; }
+    .finding-body { color: #374151; margin-top: 2px; }
+    .finding-location { margin-top: 6px; font-size: 11.5px; color: #6b7280; }
+    code { font-family: "SF Mono", "Fira Code", Consolas, monospace; background: #f3f4f6; padding: 1px 5px; border-radius: 3px; font-size: 12px; color: #374151; }
+    .clean-list { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+    .clean-list li { font-size: 13px; color: #374151; padding-left: 20px; position: relative; }
+    .clean-list li::before { content: "✓"; color: #16a34a; font-weight: 700; position: absolute; left: 0; }
+    hr { border: none; border-top: 1px solid #e5e7eb; margin: 24px 0; }
+  </style>
 </head>
 <body>
+<div class="container">
 
-<h1>Code Review: <repo-name></h1>
-<div class="meta">Reviewed: YYYY-MM-DD &nbsp;·&nbsp; <a href="<repo-url>"><repo-url></a></div>
+  <div class="header">
+    <div class="header-meta" style="margin-bottom:8px;">Code Review Report &nbsp;·&nbsp; YYYY-MM-DD</div>
+    <h1>REPO_NAME</h1>
+    <div class="header-meta"><a href="REPO_URL" target="_blank">REPO_URL</a></div>
+  </div>
 
-<h2>Verdict</h2>
-<!-- Use class="verdict verdict-yes", "verdict verdict-caveats", or "verdict verdict-no" -->
-<div class="verdict verdict-yes">Recommend Use: Yes</div>
-<p class="rationale"><em>1–2 sentence consensus rationale.</em></p>
+  <!-- Verdict: set class to verdict-no / verdict-caveats / verdict-yes; icon &#9888; for No/Caveats, &#10003; for Yes -->
+  <div class="verdict verdict-no">
+    <div class="verdict-icon">&#9888;</div>
+    <div>
+      <div class="verdict-label">Verdict</div>
+      <div class="verdict-title">Recommend Use: No</div>
+      <p>1–2 sentence consensus rationale.</p>
+    </div>
+  </div>
 
-<h2>Scope</h2>
-<table>
-  <tr><th>Domain</th><th>Status</th><th>Reason</th></tr>
-  <tr><td>Security</td><td class="run">✓ Run</td><td>Source files present</td></tr>
-  <tr><td>Quality</td><td class="run">✓ Run</td><td>Source files present</td></tr>
-  <tr><td>Architecture</td><td class="run">✓ Run</td><td>Source files present</td></tr>
-  <tr><td>Performance</td><td class="run">✓ Run</td><td>DB/async patterns detected</td></tr>
-  <tr><td>Dependencies</td><td class="run">✓ Run</td><td>Package manifest found</td></tr>
-  <tr><td>Documentation</td><td class="run">✓ Run</td><td>Always included</td></tr>
-</table>
+  <div class="card">
 
-<h2>Executive Summary</h2>
-<div class="summary">One paragraph: overall health, top concerns, any standout strengths.</div>
+    <!-- Stats pills: fill in actual counts -->
+    <div class="stats">
+      <div class="stat-pill stat-critical"><span class="dot dot-critical"></span>N Critical</div>
+      <div class="stat-pill stat-important"><span class="dot dot-important"></span>N Important</div>
+      <div class="stat-pill stat-minor"><span class="dot dot-minor"></span>N Minor</div>
+    </div>
 
-<!-- Omit any severity section that has no findings -->
+    <h2>Scope</h2>
+    <table>
+      <thead><tr><th>Domain</th><th>Status</th><th>Reason</th></tr></thead>
+      <tbody>
+        <tr><td>Security</td>      <td class="status-run">&#10003; Run</td><td>Source files present</td></tr>
+        <tr><td>Quality</td>       <td class="status-run">&#10003; Run</td><td>Source files present</td></tr>
+        <tr><td>Architecture</td>  <td class="status-run">&#10003; Run</td><td>Source files present</td></tr>
+        <tr><td>Performance</td>   <td class="status-run">&#10003; Run</td><td>DB/async patterns detected</td></tr>
+        <tr><td>Dependencies</td>  <td class="status-run">&#10003; Run</td><td>Package manifest found</td></tr>
+        <tr><td>Documentation</td> <td class="status-run">&#10003; Run</td><td>Always included</td></tr>
+        <!-- For skipped domains: <tr><td>Domain</td><td class="status-skip">&#10007; Skipped</td><td>reason</td></tr> -->
+      </tbody>
+    </table>
 
-<h2>Critical Findings</h2>
-<div class="finding critical"><span class="tag">Security</span> Finding description — <code>file:line</code></div>
+    <hr>
 
-<h2>Important Findings</h2>
-<div class="finding important"><span class="tag">Quality</span> Finding description — <code>file:line</code></div>
+    <h2>Executive Summary</h2>
+    <p>One paragraph: overall health, top concerns, any standout strengths.</p>
 
-<h2>Minor Findings</h2>
-<div class="finding minor"><span class="tag">Documentation</span> Finding description</div>
+    <hr>
 
-<h2>Clean Areas</h2>
-<ul class="clean-list">
-  <li>Area with no issues found</li>
-</ul>
+    <!-- Omit this section entirely if no Critical findings -->
+    <h2><span class="section-title-row">Critical Findings <span class="count-badge badge-critical">N</span></span></h2>
+    <div class="findings-list">
 
+      <div class="finding finding-critical">
+        <div class="finding-header">
+          <!-- Single domain: -->
+          <span class="tag tag-security">Security</span>
+          <!-- Multi-domain (use ONE combined tag): -->
+          <!-- <span class="tag tag-multi">Security / Architecture</span> -->
+          <span class="finding-title">Short descriptive title of the finding</span>
+        </div>
+        <div class="finding-body">Full explanation of the issue, its impact, and how to fix it.</div>
+        <div class="finding-location"><code>FileName.java:line</code> &nbsp;·&nbsp; <code>OtherFile.java:line</code></div>
+      </div>
+
+    </div>
+
+    <hr>
+
+    <!-- Omit this section entirely if no Important findings -->
+    <h2><span class="section-title-row">Important Findings <span class="count-badge badge-important">N</span></span></h2>
+    <div class="findings-list">
+
+      <div class="finding finding-important">
+        <div class="finding-header">
+          <span class="tag tag-quality">Quality</span>
+          <span class="finding-title">Short descriptive title</span>
+        </div>
+        <div class="finding-body">Full explanation.</div>
+        <div class="finding-location"><code>FileName.java:line</code></div>
+      </div>
+
+    </div>
+
+    <hr>
+
+    <!-- Omit this section entirely if no Minor findings -->
+    <h2><span class="section-title-row">Minor Findings <span class="count-badge badge-minor">N</span></span></h2>
+    <div class="findings-list">
+
+      <div class="finding finding-minor">
+        <div class="finding-header">
+          <span class="tag tag-documentation">Documentation</span>
+          <span class="finding-title">Short descriptive title</span>
+        </div>
+        <div class="finding-body">Full explanation.</div>
+        <div class="finding-location"><code>FileName.java:line</code></div>
+      </div>
+
+    </div>
+
+    <hr>
+
+    <h2>Clean Areas</h2>
+    <ul class="clean-list">
+      <li>Area with no issues found</li>
+    </ul>
+
+  </div>
+</div>
 </body>
 </html>
 ```
-
-Omit any severity section (`<h2>` and its findings) that has no findings. If all finding sections are empty, replace them with `<p class="empty">No issues found.</p>` after the Executive Summary. Domain tags go in `<span class="tag">` elements. Use combined tags (e.g., `<span class="tag">Security</span><span class="tag">Architecture</span>`) for findings flagged by multiple reviewers.
 
 ---
 
