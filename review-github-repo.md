@@ -6,7 +6,7 @@ Review a Git repository for security, quality, and architecture issues. Produce 
 
 **Step 1: Clone the repo**
 
-If `$ARGUMENTS` is empty or not provided, tell the user: "Please provide a Git repository URL. Usage: /review-github-repo <URL>" and stop.
+If `$ARGUMENTS` is empty or not provided, tell the user: "Please provide a Git repository URL. Usage: /review-repo <URL>" and stop.
 
 The URL is in `$ARGUMENTS`. Extract the repo name and clone with depth 1:
 
@@ -91,7 +91,7 @@ Note: The "If no domain agents ran" fallback in item 6 above also addresses the 
 
 Determine the output directory: use `Owner's Inbox/` relative to your current working directory. Create it if it does not exist.
 
-Save to: `Owner's Inbox/YYYY-MM-DD-review-<REPO_NAME>.md`
+Save to: `Owner's Inbox/YYYY-MM-DD-review-<REPO_NAME>.html`
 
 Use today's date for YYYY-MM-DD. Use the sanitized REPO_NAME.
 
@@ -101,22 +101,29 @@ Run via Bash tool: `rm -rf "$CLONE_DIR"`
 
 **Step 7: Confirm**
 
-Tell the user the report is ready and its file path.
+Tell the user the report is ready and its full file path.
 
 **Step 8: On failure**
 
 If any step after the clone fails (merge fails, report cannot be written, etc.), write a failure notice to the inbox before stopping:
 
-Save to: `Owner's Inbox/YYYY-MM-DD-review-<REPO_NAME>-FAILED.md`
+Save to: `Owner's Inbox/YYYY-MM-DD-review-<REPO_NAME>-FAILED.html`
 
 Contents:
-```markdown
-# Review Failed: <REPO_NAME>
-_Date: YYYY-MM-DD_
-_Repo: <original URL>_
-
-The code review pipeline failed. The cloned repo at `<CLONE_DIR>` may still exist.
-Error: <describe what went wrong>
+```html
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Review Failed: <REPO_NAME></title>
+<style>body{font-family:sans-serif;max-width:700px;margin:40px auto;padding:0 20px;color:#333}
+.banner{background:#fee2e2;border-left:4px solid #dc2626;padding:16px;border-radius:4px}</style>
+</head><body>
+<h1>Review Failed: <REPO_NAME></h1>
+<div class="banner">
+  <p><strong>Date:</strong> YYYY-MM-DD</p>
+  <p><strong>Repo:</strong> <original URL></p>
+  <p>The code review pipeline failed. The cloned repo at <code><CLONE_DIR></code> may still exist.</p>
+  <p><strong>Error:</strong> <describe what went wrong></p>
+</div>
+</body></html>
 ```
 
 Then delete the temp directory if it still exists.
@@ -125,45 +132,87 @@ Then delete the temp directory if it still exists.
 
 ## Report Format
 
-```markdown
-# Code Review: <repo-name>
-_Reviewed: YYYY-MM-DD_
-_Repo: <the original repository URL from $ARGUMENTS>_
+Produce a self-contained HTML file with all styles inline. Use this template:
 
-## Verdict
-**Recommend Use: Yes / Yes, with caveats / No**
-_<1–2 sentence consensus rationale from all reviewers that ran.>_
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Code Review: <repo-name></title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; max-width: 860px; margin: 40px auto; padding: 0 24px; color: #1a1a1a; line-height: 1.6; }
+  h1 { font-size: 1.6rem; margin-bottom: 4px; }
+  .meta { color: #666; font-size: 0.9rem; margin-bottom: 32px; }
+  .meta a { color: #666; }
+  h2 { font-size: 1.1rem; font-weight: 600; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; margin-top: 36px; }
+  .verdict { display: inline-block; padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 0.95rem; margin-bottom: 8px; }
+  .verdict-yes { background: #dcfce7; color: #166534; }
+  .verdict-caveats { background: #fef9c3; color: #854d0e; }
+  .verdict-no { background: #fee2e2; color: #991b1b; }
+  .rationale { color: #444; font-size: 0.95rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 12px; }
+  th { text-align: left; padding: 8px 12px; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600; }
+  td { padding: 8px 12px; border: 1px solid #e5e7eb; }
+  .run { color: #16a34a; }
+  .skipped { color: #9ca3af; }
+  .finding { margin: 8px 0; padding: 10px 14px; border-radius: 6px; font-size: 0.9rem; }
+  .critical { background: #fee2e2; border-left: 3px solid #dc2626; }
+  .important { background: #fff7ed; border-left: 3px solid #ea580c; }
+  .minor { background: #eff6ff; border-left: 3px solid #3b82f6; }
+  .tag { display: inline-block; background: #e5e7eb; color: #374151; font-size: 0.75rem; font-weight: 600; padding: 1px 6px; border-radius: 4px; margin-right: 6px; }
+  .clean-list { list-style: none; padding: 0; }
+  .clean-list li::before { content: "✓ "; color: #16a34a; font-weight: 600; }
+  .summary { background: #f9fafb; padding: 16px; border-radius: 6px; font-size: 0.95rem; }
+  .empty { color: #9ca3af; font-style: italic; font-size: 0.9rem; }
+</style>
+</head>
+<body>
 
-## Scope
-| Domain | Status | Reason |
-|--------|--------|--------|
-| Security | ✓ Run | <Scout rationale> |
-| Quality | ✓ Run | <Scout rationale> |
-| Architecture | ✓ Run | <Scout rationale> |
-| Performance | ✓ Run or ✗ Skipped | <Scout rationale> |
-| Dependencies | ✓ Run or ✗ Skipped | <Scout rationale> |
-| Documentation | ✓ Run | <Scout rationale> |
+<h1>Code Review: <repo-name></h1>
+<div class="meta">Reviewed: YYYY-MM-DD &nbsp;·&nbsp; <a href="<repo-url>"><repo-url></a></div>
 
-## Executive Summary
-<One paragraph: overall health, top concerns, any standout strengths.>
+<h2>Verdict</h2>
+<!-- Use class="verdict verdict-yes", "verdict verdict-caveats", or "verdict verdict-no" -->
+<div class="verdict verdict-yes">Recommend Use: Yes</div>
+<p class="rationale"><em>1–2 sentence consensus rationale.</em></p>
 
-## Critical Findings
-- [Security] <finding> — <file:line>
-- [Architecture] <finding>
+<h2>Scope</h2>
+<table>
+  <tr><th>Domain</th><th>Status</th><th>Reason</th></tr>
+  <tr><td>Security</td><td class="run">✓ Run</td><td>Source files present</td></tr>
+  <tr><td>Quality</td><td class="run">✓ Run</td><td>Source files present</td></tr>
+  <tr><td>Architecture</td><td class="run">✓ Run</td><td>Source files present</td></tr>
+  <tr><td>Performance</td><td class="run">✓ Run</td><td>DB/async patterns detected</td></tr>
+  <tr><td>Dependencies</td><td class="run">✓ Run</td><td>Package manifest found</td></tr>
+  <tr><td>Documentation</td><td class="run">✓ Run</td><td>Always included</td></tr>
+</table>
 
-## Important Findings
-- [Quality] <finding> — <file:line>
-- [Performance] <finding> — <file:line>
+<h2>Executive Summary</h2>
+<div class="summary">One paragraph: overall health, top concerns, any standout strengths.</div>
 
-## Minor Findings
-- [Documentation] <finding>
-- [Dependencies] <finding> — <file>
+<!-- Omit any severity section that has no findings -->
 
-## Clean Areas
-- <areas with no issues found>
+<h2>Critical Findings</h2>
+<div class="finding critical"><span class="tag">Security</span> Finding description — <code>file:line</code></div>
+
+<h2>Important Findings</h2>
+<div class="finding important"><span class="tag">Quality</span> Finding description — <code>file:line</code></div>
+
+<h2>Minor Findings</h2>
+<div class="finding minor"><span class="tag">Documentation</span> Finding description</div>
+
+<h2>Clean Areas</h2>
+<ul class="clean-list">
+  <li>Area with no issues found</li>
+</ul>
+
+</body>
+</html>
 ```
 
-Omit any severity section that has no findings. If all sections are empty, write "No issues found." under Executive Summary. Domain tags include [Security], [Quality], [Architecture], [Performance], [Dependencies], and [Documentation]. Use combined tags (e.g., [Security/Architecture]) for findings flagged by multiple reviewers.
+Omit any severity section (`<h2>` and its findings) that has no findings. If all finding sections are empty, replace them with `<p class="empty">No issues found.</p>` after the Executive Summary. Domain tags go in `<span class="tag">` elements. Use combined tags (e.g., `<span class="tag">Security</span><span class="tag">Architecture</span>`) for findings flagged by multiple reviewers.
 
 ---
 
